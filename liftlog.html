@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+<meta charset="UTF-8">
+<title>LIFT LOG</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+  html, body { height: 100%; }
+  body { font-family: system-ui, sans-serif; background: #f0f4f8; color: #111; overflow-y: auto; }
+  .app { max-width: 420px; margin: 0 auto; padding: 8px 10px 40px; }
+
+  /* HEADER */
+  .header { background: #185FA5; border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+  .header-top { padding: 10px 14px 8px; }
+  .header-title { font-size: 13px; font-weight: 600; color: #E6F1FB; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+  .header-routine { font-size: 11px; color: #B5D4F4; padding: 0 14px 6px; }
+  .header-btns { display: flex; gap: 5px; flex-wrap: nowrap; padding: 0 10px 10px; justify-content: flex-end; }
+  .hbtn { background: transparent; border: 0.5px solid #378ADD; border-radius: 7px; padding: 5px 0; font-size: 11px; cursor: pointer; color: #B5D4F4; white-space: nowrap; flex: 1; text-align: center; }
+  .hbtn.active { background: #0C447C; color: #B5D4F4; border-color: #0C447C; }
+  .hbtn.pulse { animation: pulse 1.5s infinite; border-color: #7EC8F0; color: #E6F1FB; }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(126,200,240,0.5);} 50%{box-shadow:0 0 0 5px rgba(126,200,240,0);} }
+
+  /* CARDS */
+  .card { background: #fff; border: 0.5px solid #ddd; border-radius: 10px; padding: 11px 13px; margin-bottom: 10px; }
+  .card-title { font-size: 13px; font-weight: 600; color: #185FA5; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+
+  /* EXERCISE ENTRY */
+  .ex-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; }
+  .ex-name { font-size: 20px; font-weight: 500; text-transform: capitalize; color: #111; }
+  .ex-progress { font-size: 12px; color: #185FA5; font-weight: 500; }
+  .prev-box { background: #E6F1FB; border-radius: 7px; padding: 8px 11px; margin-bottom: 10px; }
+  .prev-label { font-size: 10px; color: #185FA5; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .prev-sets { display: flex; gap: 12px; flex-wrap: wrap; }
+  .prev-set { font-size: 14px; color: #0C447C; }
+  .prev-set span { color: #042C53; font-weight: 600; }
+  .prev-note { font-size: 12px; color: #185FA5; margin-top: 5px; font-style: italic; }
+  .col-headers { display: grid; gap: 6px; margin-bottom: 3px; }
+  .col-header { font-size: 10px; color: #888; text-align: center; }
+  .set-row { display: grid; gap: 6px; align-items: center; margin-bottom: 6px; }
+  .set-label { font-size: 14px; color: #111; text-align: center; font-weight: 700; }
+  input[type=number] { width: 100%; padding: 8px 6px; border: 1.5px solid #111; border-radius: 7px; background: #fff; color: #111; font-size: 17px; text-align: center; }
+  input[type=number]:focus { outline: none; border-color: #185FA5; }
+  .note-row { margin-top: 8px; }
+  .note-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+  input[type=text].note-input { width: 100%; padding: 7px 10px; border: 1px solid #ccc; border-radius: 7px; background: #fff; color: #111; font-size: 13px; }
+  input[type=text].note-input:focus { outline: none; border-color: #185FA5; }
+  input[type=text] { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 7px; background: #fff; color: #111; font-size: 14px; }
+  input[type=text]:focus { outline: none; border-color: #185FA5; }
+
+  /* BUTTONS */
+  .btn-row { display: flex; gap: 8px; margin-top: 10px; }
+  .btn { flex: 1; padding: 11px; border-radius: 9px; font-size: 15px; font-weight: 500; cursor: pointer; border: 1px solid #ccc; background: #fff; color: #111; text-align: center; }
+  .btn.primary { background: #639922; color: #fff; border-color: #639922; }
+  .btn.blue { background: #185FA5; color: #fff; border-color: #185FA5; }
+  .btn.red { background: transparent; color: #c00; border-color: #c00; }
+  .btn.small { padding: 8px 12px; font-size: 13px; }
+  .btn.full { width: 100%; flex: none; display: block; }
+  .btn.feedback { background: #E6F1FB; color: #185FA5; border-color: #B5D4F4; font-size: 14px; }
+  .btn:active { transform: scale(0.97); }
+
+  /* DOTS */
+  .dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #ddd; }
+  .dot.done { background: #378ADD; }
+  .dot.current { background: #185FA5; }
+
+  /* DATE ROW */
+  .date-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .date-row label { font-size: 13px; color: #555; white-space: nowrap; }
+  input[type=date] { flex: 1; padding: 7px 10px; border: 1px solid #ccc; border-radius: 7px; background: #fff; color: #111; font-size: 14px; }
+
+  /* HISTORY */
+  .summary-card { background: #fff; border: 0.5px solid #ddd; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .summary-date { font-size: 13px; color: #888; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .summary-date strong { font-size: 15px; color: #111; }
+  .summary-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+  .summary-table th { text-align: left; font-weight: 500; color: #888; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding-bottom: 5px; }
+  .summary-table td { padding: 3px 0; vertical-align: top; }
+  .summary-table td:first-child { width: 100px; color: #666; font-size: 12px; }
+  .set-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip { background: #E6F1FB; color: #0C447C; border-radius: 4px; padding: 2px 6px; font-size: 12px; }
+  .hist-note { font-size: 11px; color: #185FA5; font-style: italic; margin-top: 2px; }
+  .delete-btn { background: transparent; border: 0.5px solid #c00; color: #c00; border-radius: 6px; padding: 3px 8px; font-size: 12px; cursor: pointer; }
+
+  /* ROUTINE BUILDER */
+  .ex-item { background: #f8f8f8; border: 0.5px solid #ddd; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+  .ex-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .ex-item-name { font-size: 14px; font-weight: 500; color: #111; }
+  .ex-item-detail { font-size: 12px; color: #666; }
+  .type-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .type-btn { padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 0.5px solid #ccc; background: #fff; color: #555; }
+  .type-btn.selected { background: #185FA5; color: #fff; border-color: #185FA5; }
+  .field-label { font-size: 11px; color: #888; margin-bottom: 3px; margin-top: 8px; }
+  select { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 7px; background: #fff; color: #111; font-size: 14px; }
+  select:focus { outline: none; border-color: #185FA5; }
+
+  /* MENU ITEMS */
+  .menu-item { background: #fff; border: 0.5px solid #ddd; border-radius: 9px; padding: 13px 16px; margin-bottom: 8px; font-size: 15px; font-weight: 500; cursor: pointer; color: #111; display: flex; justify-content: space-between; align-items: center; }
+  .menu-item:active { background: #E6F1FB; }
+  .menu-item .arrow { color: #185FA5; font-size: 18px; }
+  .menu-item.active-routine { border-color: #639922; }
+  .menu-item .active-tag { color: #639922; font-size: 12px; font-weight: 400; }
+
+  /* MISC */
+  .empty-state { text-align: center; padding: 32px 16px; color: #888; font-size: 14px; }
+  .done-screen { padding: 32px 16px; text-align: center; }
+  .done-screen h2 { font-size: 22px; font-weight: 500; margin-bottom: 8px; }
+  .done-screen p { color: #888; margin-bottom: 20px; font-size: 14px; }
+  .section-note { font-size: 11px; color: #999; margin-top: 8px; line-height: 1.5; }
+  .trial-banner { background: #FFF8E1; border: 0.5px solid #FFD54F; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; font-size: 12px; color: #795548; text-align: center; }
+  .locked-banner { background: #FFEBEE; border: 0.5px solid #EF9A9A; border-radius: 8px; padding: 12px; margin-bottom: 10px; font-size: 13px; color: #c62828; text-align: center; line-height: 1.6; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #185FA5; color: #fff; padding: 9px 20px; border-radius: 18px; font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+  .spacer { height: 44px; } /* space of one button height */
+</style>
+</head>
+<body>
+<div class="app" id="root"></div>
+<div class="toast" id="toast"></div>
+<script>
+const FEEDBACK_EMAIL = 'lift.log.feedback@gmail.com';
+const PAYMENT_AMOUNT = '$2';
+const MAX_ROUTINES = 4;
+const MAX_EXERCISES = 20;
+const MAX_SETS = 6;
+const TRIAL_DAYS = 30;
+const MEASURE_TYPES = [
+  { id:'lbs_reps', label:'Lbs + Reps' },
+  { id:'kg_reps',  label:'Kg + Reps' },
+  { id:'reps',     label:'Reps only' }
+];
+
+function load(key,def){ try{ const v=localStorage.getItem(key); return v!==null?JSON.parse(v):def; }catch(e){ return def; } }
+function save(key,val){ localStorage.setItem(key,JSON.stringify(val)); }
+function loadRoutines(){ return load('ll_routines',[]); }
+function saveRoutines(r){ save('ll_routines',r); }
+function loadActiveRoutine(){ return load('ll_active_routine',null); }
+function saveActiveRoutine(n){ save('ll_active_routine',n); }
+function loadSessions(){ return load('ll_sessions',{}); }
+function saveSessions(s){ save('ll_sessions',s); }
+function loadInstallDate(){ let d=load('ll_install_date',null); if(!d){d=new Date().toISOString();save('ll_install_date',d);} return d; }
+function loadFirstUse(){ return load('ll_first_use',true); }
+function saveFirstUse(){ save('ll_first_use',false); }
+function daysElapsed(){ const i=new Date(loadInstallDate()); const n=new Date(); return Math.floor((n-i)/(1000*60*60*24)); }
+function isLocked(){ return daysElapsed()>=TRIAL_DAYS; }
+function daysLeft(){ return Math.max(0,TRIAL_DAYS-daysElapsed()); }
+function capitalize(str){ return str?str.charAt(0).toUpperCase()+str.slice(1):str; }
+function getToday(){ return new Date().toISOString().split('T')[0]; }
+function formatDate(str){ const [y,m,d]=str.split('-'); return new Date(y,m-1,d).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}); }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
+
+function getSessionsForRoutine(name){ const a=loadSessions(); return a[name]||[]; }
+function saveSessionForRoutine(name,session){ const a=loadSessions(); if(!a[name])a[name]=[]; a[name].push(session); saveSessions(a); }
+function deleteSessionForRoutine(name,idx){ const a=loadSessions(); if(!a[name])return; a[name].splice(idx,1); saveSessions(a); }
+function getLastSessionForRoutine(name){ const s=getSessionsForRoutine(name); return s.length?s[s.length-1]:null; }
+function getDefaultsForExercise(routineName,exName){ const last=getLastSessionForRoutine(routineName); if(!last||!last.exercises)return null; return last.exercises[exName]||null; }
+
+function exportData(){ const data={routines:loadRoutines(),sessions:loadSessions(),activeRoutine:loadActiveRoutine(),installDate:loadInstallDate()}; const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='liftlog-backup-'+getToday()+'.json'; a.click(); URL.revokeObjectURL(url); showToast('Backup saved!'); }
+function importData(file,onDone){ const reader=new FileReader(); reader.onload=e=>{ try{ const d=JSON.parse(e.target.result); if(d.routines)saveRoutines(d.routines); if(d.sessions)saveSessions(d.sessions); if(d.activeRoutine)saveActiveRoutine(d.activeRoutine); showToast('Import successful!'); onDone(); }catch(err){alert('Could not read backup file.');} }; reader.readAsText(file); }
+
+document.addEventListener('focusin',function(e){ if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT'){ setTimeout(()=>e.target.scrollIntoView({behavior:'smooth',block:'center'}),300); } });
+
+class App {
+  constructor(){
+    loadInstallDate();
+    this.routines=loadRoutines();
+    this.activeRoutineName=loadActiveRoutine();
+    this.view='entry';
+    this.date=getToday();
+    this.currentExIdx=0;
+    this.currentData={};
+    this.firstUse=loadFirstUse();
+    this.builderMode=null;
+    this.builderRoutine={name:'',exercises:[]};
+    this.builderStep='menu';
+    this.builderExForm={name:'',sets:3,type:'lbs_reps'};
+    this.builderExEditIdx=null;
+    if(this.activeRoutineName)this.initEntryData();
+    this.render();
+  }
+
+  getActiveRoutine(){ return this.routines.find(r=>r.name===this.activeRoutineName)||null; }
+
+  initEntryData(){
+    const routine=this.getActiveRoutine(); if(!routine)return;
+    this.currentData={};
+    routine.exercises.forEach(ex=>{
+      const prev=getDefaultsForExercise(this.activeRoutineName,ex.name);
+      if(ex.type==='reps'){ this.currentData[ex.name]={count:'',note:''}; }
+      else { this.currentData[ex.name]={sets:Array.from({length:ex.sets},(_,i)=>({lbs:prev&&prev.sets&&prev.sets[i]?prev.sets[i].lbs:'',reps:''})),note:''}; }
+    });
+  }
+
+  saveSession(){
+    const routine=this.getActiveRoutine(); if(!routine)return;
+    saveSessionForRoutine(this.activeRoutineName,{date:this.date,exercises:JSON.parse(JSON.stringify(this.currentData))});
+  }
+
+  render(){
+    const root=document.getElementById('root'); root.innerHTML='';
+    const el=document.createElement('div');
+    el.appendChild(this.renderHeader());
+    if(isLocked()&&this.view!=='history'){ el.appendChild(this.renderLocked()); }
+    else {
+      if(this.view==='entry') el.appendChild(this.renderEntry());
+      else if(this.view==='history') el.appendChild(this.renderHistory());
+      else if(this.view==='builder') el.appendChild(this.renderBuilder());
+      else if(this.view==='selectRoutine') el.appendChild(this.renderSelectRoutine());
+      else if(this.view==='done') el.appendChild(this.renderDone());
+    }
+    root.appendChild(el);
+  }
+
+  renderHeader(){
+    const hdr=document.createElement('div'); hdr.className='header';
+    const top=document.createElement('div'); top.className='header-top';
+    const routineLabel=this.activeRoutineName?': '+this.activeRoutineName:'';
+    top.innerHTML='<span class="header-title">LIFT LOG'+routineLabel+'</span>';
+    hdr.appendChild(top);
+    const btns=document.createElement('div'); btns.className='header-btns';
+
+    // Create/Edit Routine
+    const ceBtn=document.createElement('button');
+    ceBtn.className='hbtn'+(this.firstUse?' pulse':'');
+    ceBtn.textContent='Create/Edit Routine';
+    ceBtn.onclick=()=>{this.view='builder';this.builderStep='menu';this.render();};
+    btns.appendChild(ceBtn);
+
+    // Select Routine
+    const srBtn=document.createElement('button'); srBtn.className='hbtn';
+    srBtn.textContent='Select';
+    srBtn.onclick=()=>{this.view='selectRoutine';this.render();};
+    btns.appendChild(srBtn);
+
+    // Today
+    const todayBtn=document.createElement('button');
+    todayBtn.className='hbtn'+(this.view==='entry'?' active':'');
+    todayBtn.textContent='Today';
+    todayBtn.onclick=()=>{this.view='entry';this.currentExIdx=0;this.initEntryData();this.render();};
+    btns.appendChild(todayBtn);
+
+    // History
+    const histBtn=document.createElement('button');
+    histBtn.className='hbtn'+(this.view==='history'?' active':'');
+    histBtn.textContent='History';
+    histBtn.onclick=()=>{this.view='history';this.render();};
+    btns.appendChild(histBtn);
+
+    hdr.appendChild(btns);
+    return hdr;
+  }
+
+  renderLocked(){
+    const wrap=document.createElement('div');
+    const banner=document.createElement('div'); banner.className='locked-banner';
+    banner.innerHTML='🏋️ 💪<br><br>Your 30-day free trial has ended.<br><br>Lift Log is just <strong>'+PAYMENT_AMOUNT+'</strong> — a one-time payment, no subscription, no ads, ever. We hope you\'ll stick around. Thanks in advance.<br><br><em>To continue logging, please purchase Lift Log.</em>';
+    wrap.appendChild(banner);
+    const note=document.createElement('div'); note.className='card';
+    note.innerHTML='<div class="card-title">Your data is safe</div><p style="font-size:13px;color:#555;line-height:1.6;">All your workout history is preserved. Tap History above to view your past sessions anytime.</p>';
+    wrap.appendChild(note);
+    return wrap;
+  }
+
+  renderEntry(){
+    const wrap=document.createElement('div');
+    const routine=this.getActiveRoutine();
+    const days=daysLeft();
+    if(days<=7&&days>0){ const banner=document.createElement('div'); banner.className='trial-banner'; banner.textContent='Free trial: '+days+' day'+(days!==1?'s':'')+' remaining.'; wrap.appendChild(banner); }
+    if(!routine){ const empty=document.createElement('div'); empty.className='empty-state'; empty.innerHTML='<p style="font-size:15px;margin-bottom:12px;">No routine selected.</p><p style="font-size:13px;color:#aaa;">Tap <strong>Create/Edit Routine</strong> above to get started.</p>'; wrap.appendChild(empty); return wrap; }
+    if(!routine.exercises.length){ const empty=document.createElement('div'); empty.className='empty-state'; empty.textContent='This routine has no exercises. Tap Create/Edit Routine to add some.'; wrap.appendChild(empty); return wrap; }
+
+    const dr=document.createElement('div'); dr.className='date-row'; dr.innerHTML='<label>Date</label>';
+    const di=document.createElement('input'); di.type='date'; di.value=this.date; di.onchange=e=>this.date=e.target.value;
+    dr.appendChild(di); wrap.appendChild(dr);
+
+    const ex=routine.exercises[this.currentExIdx];
+    const prevData=getDefaultsForExercise(this.activeRoutineName,ex.name);
+    const card=document.createElement('div'); card.className='card';
+    const exh=document.createElement('div'); exh.className='ex-header';
+    exh.innerHTML='<span class="ex-name">'+ex.name+'</span><span class="ex-progress">'+(this.currentExIdx+1)+' of '+routine.exercises.length+'</span>';
+    card.appendChild(exh);
+
+    const pb=document.createElement('div'); pb.className='prev-box';
+    pb.innerHTML='<div class="prev-label">Last session</div>';
+    const ps=document.createElement('div'); ps.className='prev-sets';
+    if(!prevData){ ps.innerHTML='<span class="prev-set" style="color:#888;font-size:13px;">No previous data</span>'; }
+    else if(ex.type==='reps'){ ps.innerHTML='<span class="prev-set">Count: <span>'+prevData.count+'</span></span>'; }
+    else { (prevData.sets||[]).forEach((s,i)=>{ const sp=document.createElement('span'); sp.className='prev-set'; sp.innerHTML='S'+(i+1)+': <span>'+s.lbs+' x '+s.reps+'</span>'; ps.appendChild(sp); }); }
+    pb.appendChild(ps);
+    if(prevData&&prevData.note){ const pn=document.createElement('div'); pn.className='prev-note'; pn.textContent='Note: '+prevData.note; pb.appendChild(pn); }
+    card.appendChild(pb);
+
+    const exData=this.currentData[ex.name];
+    if(ex.type==='reps'){
+      const row=document.createElement('div'); row.style.cssText='display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;margin-bottom:6px;';
+      row.innerHTML='<span style="font-size:15px;color:#666;">Count (reps)</span>';
+      const inp=document.createElement('input'); inp.type='number'; inp.min='0'; inp.inputMode='numeric'; inp.value=exData.count;
+      inp.oninput=e=>this.currentData[ex.name].count=e.target.value;
+      row.appendChild(inp); card.appendChild(row);
+    } else {
+      const unit=ex.type==='kg_reps'?'Kg':'Lbs';
+      const ch=document.createElement('div'); ch.className='col-headers'; ch.style.gridTemplateColumns='36px 1fr 1fr';
+      ch.innerHTML='<div></div><div class="col-header">'+unit+'</div><div class="col-header">Reps</div>';
+      card.appendChild(ch);
+      exData.sets.forEach((set,i)=>{
+        const row=document.createElement('div'); row.className='set-row'; row.style.gridTemplateColumns='36px 1fr 1fr';
+        row.innerHTML='<div class="set-label">S'+(i+1)+'</div>';
+        const li=document.createElement('input'); li.type='number'; li.min='0'; li.inputMode='numeric'; li.value=set.lbs;
+        li.oninput=e=>this.currentData[ex.name].sets[i].lbs=e.target.value;
+        const ri=document.createElement('input'); ri.type='number'; ri.min='0'; ri.inputMode='numeric'; ri.value=set.reps;
+        ri.oninput=e=>this.currentData[ex.name].sets[i].reps=e.target.value;
+        row.appendChild(li); row.appendChild(ri); card.appendChild(row);
+      });
+    }
+
+    const noteRow=document.createElement('div'); noteRow.className='note-row';
+    noteRow.innerHTML='<div class="note-label">Note</div>';
+    const noteIn=document.createElement('input'); noteIn.type='text'; noteIn.className='note-input'; noteIn.value=exData.note||'';
+    noteIn.setAttribute('enterkeyhint','done');
+    noteIn.oninput=e=>this.currentData[ex.name].note=e.target.value;
+    noteIn.addEventListener('keydown',e=>{ if(e.key==='Enter')noteIn.blur(); });
+    noteRow.appendChild(noteIn); card.appendChild(noteRow);
+    wrap.appendChild(card);
+
+    const isLast=this.currentExIdx===routine.exercises.length-1;
+    const br=document.createElement('div'); br.className='btn-row';
+    if(this.currentExIdx>0){ const bk=document.createElement('button'); bk.className='btn'; bk.textContent='Back'; bk.onclick=()=>{this.currentExIdx--;this.render();}; br.appendChild(bk); }
+    if(!isLast){ const nx=document.createElement('button'); nx.className='btn primary'; nx.textContent='Next: '+capitalize(routine.exercises[this.currentExIdx+1].name); nx.onclick=()=>{this.currentExIdx++;this.render();}; br.appendChild(nx); }
+    else { const sv=document.createElement('button'); sv.className='btn primary'; sv.textContent='Save Session'; sv.onclick=()=>{this.saveSession();this.view='done';this.render();}; br.appendChild(sv); }
+    wrap.appendChild(br);
+
+    const dots=document.createElement('div'); dots.className='dots';
+    routine.exercises.forEach((_,i)=>{ const d=document.createElement('div'); d.className='dot'+(i===this.currentExIdx?' current':i<this.currentExIdx?' done':''); dots.appendChild(d); });
+    wrap.appendChild(dots);
+    return wrap;
+  }
+
+  renderDone(){
+    const wrap=document.createElement('div'); wrap.className='done-screen';
+    wrap.innerHTML='<h2>Session saved!</h2><p>'+formatDate(this.date)+'</p>';
+
+    const sn=document.createElement('button'); sn.className='btn primary full';
+    sn.style.cssText='display:block;width:100%;margin-bottom:10px;padding:14px;font-size:16px;';
+    sn.textContent='Start new session';
+    sn.onclick=()=>{this.date=getToday();this.currentExIdx=0;this.initEntryData();this.view='entry';this.render();};
+    wrap.appendChild(sn);
+
+    const hi=document.createElement('button'); hi.className='btn full';
+    hi.style.cssText='display:block;width:100%;padding:14px;font-size:16px;';
+    hi.textContent='View history';
+    hi.onclick=()=>{this.view='history';this.render();};
+    wrap.appendChild(hi);
+
+    // Spacer — room for one button
+    const spacer=document.createElement('div'); spacer.className='spacer';
+    wrap.appendChild(spacer);
+
+    // Feedback button — light blue, discreet
+    const fb=document.createElement('button'); fb.className='btn feedback full';
+    fb.style.cssText='display:block;width:100%;padding:11px;font-size:14px;';
+    fb.textContent='Send feedback or suggestions';
+    fb.onclick=()=>{
+      const subject=encodeURIComponent('Lift Log Feedback');
+      const body=encodeURIComponent('Hi,\n\nHere is my feedback for Lift Log:\n\n');
+      window.open('mailto:'+FEEDBACK_EMAIL+'?subject='+subject+'&body='+body);
+    };
+    wrap.appendChild(fb);
+
+    return wrap;
+  }
+
+  renderHistory(){
+    const wrap=document.createElement('div');
+    const routine=this.getActiveRoutine();
+    const bk=document.createElement('div'); bk.className='card';
+    bk.innerHTML='<div class="card-title">Backup & Restore</div>';
+    const bkRow=document.createElement('div'); bkRow.className='btn-row'; bkRow.style.marginTop='0';
+    const expBtn=document.createElement('button'); expBtn.className='btn small'; expBtn.textContent='Export backup'; expBtn.onclick=()=>exportData();
+    const impBtn=document.createElement('button'); impBtn.className='btn small'; impBtn.textContent='Import backup';
+    impBtn.onclick=()=>{ const inp=document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=e=>{ const f=e.target.files[0]; if(f)importData(f,()=>{this.routines=loadRoutines();this.render();}); }; inp.click(); };
+    bkRow.appendChild(expBtn); bkRow.appendChild(impBtn); bk.appendChild(bkRow);
+    const bn=document.createElement('div'); bn.className='section-note'; bn.textContent='Export saves all routines and session history. Store in Google Drive for safekeeping.'; bk.appendChild(bn); wrap.appendChild(bk);
+
+    if(!routine){ const empty=document.createElement('div'); empty.className='empty-state'; empty.textContent='No routine selected.'; wrap.appendChild(empty); return wrap; }
+    const sessions=getSessionsForRoutine(this.activeRoutineName);
+    if(!sessions.length){ const empty=document.createElement('div'); empty.className='empty-state'; empty.textContent='No sessions recorded yet for this routine.'; wrap.appendChild(empty); return wrap; }
+
+    [...sessions].reverse().forEach((session,si)=>{
+      const realIdx=sessions.length-1-si;
+      const card=document.createElement('div'); card.className='summary-card';
+      const dr=document.createElement('div'); dr.className='summary-date';
+      dr.innerHTML='<strong>'+formatDate(session.date)+'</strong>';
+      const del=document.createElement('button'); del.className='delete-btn'; del.textContent='Delete';
+      del.onclick=()=>{ if(confirm('Delete this session?')){deleteSessionForRoutine(this.activeRoutineName,realIdx);this.render();} };
+      dr.appendChild(del); card.appendChild(dr);
+      const tbl=document.createElement('table'); tbl.className='summary-table';
+      tbl.innerHTML='<tr><th>Exercise</th><th>Results</th></tr>';
+      routine.exercises.forEach(ex=>{
+        const data=session.exercises&&session.exercises[ex.name]; if(!data)return;
+        const tr=document.createElement('tr');
+        const nt=document.createElement('td'); nt.textContent=ex.name; tr.appendChild(nt);
+        const vt=document.createElement('td');
+        if(ex.type==='reps'){ vt.innerHTML='<span class="chip">'+data.count+' reps</span>'; }
+        else { const sc=document.createElement('div'); sc.className='set-chips'; (data.sets||[]).forEach(s=>{ const c=document.createElement('span'); c.className='chip'; c.textContent=s.lbs+' x '+s.reps; sc.appendChild(c); }); vt.appendChild(sc); }
+        if(data.note){ const hn=document.createElement('div'); hn.className='hist-note'; hn.textContent='Note: '+data.note; vt.appendChild(hn); }
+        tr.appendChild(vt); tbl.appendChild(tr);
+      });
+      card.appendChild(tbl); wrap.appendChild(card);
+    });
+    return wrap;
+  }
+
+  renderSelectRoutine(){
+    const wrap=document.createElement('div');
+    const card=document.createElement('div'); card.className='card';
+    card.innerHTML='<div class="card-title">Select Routine</div>';
+
+    if(!this.routines.length){
+      const empty=document.createElement('div'); empty.style.cssText='font-size:13px;color:#888;padding:8px 0;';
+      empty.textContent='No routines yet. Tap Create/Edit Routine to get started.'; card.appendChild(empty);
+    }
+
+    this.routines.forEach(r=>{
+      const isActive=r.name===this.activeRoutineName;
+      const item=document.createElement('div'); item.className='menu-item'+(isActive?' active-routine':'');
+      item.innerHTML='<span>'+r.name+'</span>'+(isActive?'<span class="active-tag">Active</span>':'<span class="arrow">›</span>');
+      item.onclick=()=>{
+        this.activeRoutineName=r.name;
+        saveActiveRoutine(r.name);
+        this.currentExIdx=0;
+        this.initEntryData();
+        this.view='entry';
+        this.render();
+      };
+      card.appendChild(item);
+    });
+
+    wrap.appendChild(card);
+    const br=document.createElement('div'); br.className='btn-row';
+    const back=document.createElement('button'); back.className='btn'; back.textContent='Cancel';
+    back.onclick=()=>{this.view='entry';this.render();}; br.appendChild(back);
+    wrap.appendChild(br);
+    return wrap;
+  }
+
+  renderBuilder(){
+    const wrap=document.createElement('div');
+    if(this.builderStep==='menu') wrap.appendChild(this.renderBuilderMenu());
+    else if(this.builderStep==='name') wrap.appendChild(this.renderBuilderName());
+    else if(this.builderStep==='exercises') wrap.appendChild(this.renderBuilderExercises());
+    else if(this.builderStep==='ex_form') wrap.appendChild(this.renderBuilderExForm());
+    return wrap;
+  }
+
+  renderBuilderMenu(){
+    const wrap=document.createElement('div');
+    const card=document.createElement('div'); card.className='card';
+    card.innerHTML='<div class="card-title">Create / Edit Routine</div>';
+    if(this.routines.length<MAX_ROUTINES){
+      const item=document.createElement('div'); item.className='menu-item';
+      item.innerHTML='<span>Create Routine</span><span class="arrow">›</span>';
+      item.onclick=()=>{this.builderMode='create';this.builderRoutine={name:'',exercises:[]};this.builderStep='name';this.render();};
+      card.appendChild(item);
+    } else {
+      const note=document.createElement('div'); note.style.cssText='font-size:12px;color:#888;padding:8px 0;';
+      note.textContent='Maximum of '+MAX_ROUTINES+' routines reached.'; card.appendChild(note);
+    }
+    this.routines.forEach(r=>{
+      const item=document.createElement('div'); item.className='menu-item';
+      item.innerHTML='<span>Edit <strong>'+r.name+'</strong></span><span class="arrow">›</span>';
+      item.onclick=()=>{this.builderMode='edit';this.builderRoutine=JSON.parse(JSON.stringify(r));this.builderStep='name';this.render();};
+      card.appendChild(item);
+    });
+    const br=document.createElement('div'); br.className='btn-row';
+    const back=document.createElement('button'); back.className='btn'; back.textContent='Cancel';
+    back.onclick=()=>{this.view='entry';this.render();}; br.appendChild(back);
+    wrap.appendChild(card); wrap.appendChild(br);
+    return wrap;
+  }
+
+  renderBuilderName(){
+    const wrap=document.createElement('div');
+    const card=document.createElement('div'); card.className='card';
+    card.innerHTML='<div class="card-title">'+(this.builderMode==='create'?'New Routine':'Edit Routine')+'</div>';
+    const lbl=document.createElement('div'); lbl.className='field-label'; lbl.textContent='Routine name'; card.appendChild(lbl);
+    const inp=document.createElement('input'); inp.type='text';
+    inp.value=this.builderRoutine.name;
+    inp.placeholder='e.g., My Workout, Upper Body Day...';
+    inp.oninput=e=>this.builderRoutine.name=e.target.value;
+    card.appendChild(inp);
+    wrap.appendChild(card);
+    const br=document.createElement('div'); br.className='btn-row';
+    const back=document.createElement('button'); back.className='btn'; back.textContent='Back';
+    back.onclick=()=>{this.builderStep='menu';this.render();}; br.appendChild(back);
+    const next=document.createElement('button'); next.className='btn primary'; next.textContent='Next: Exercises';
+    next.onclick=()=>{
+      const name=this.builderRoutine.name.trim();
+      if(!name){alert('Please enter a routine name.');return;}
+      this.builderRoutine.name=name;
+      this.builderStep='exercises';
+      this.render();
+    }; br.appendChild(next);
+    wrap.appendChild(br);
+    return wrap;
+  }
+
+  renderBuilderExercises(){
+    const wrap=document.createElement('div');
+    const card=document.createElement('div'); card.className='card';
+    card.innerHTML='<div class="card-title">Exercises — '+this.builderRoutine.name+'</div>';
+    if(!this.builderRoutine.exercises.length){
+      const empty=document.createElement('div'); empty.style.cssText='font-size:13px;color:#888;padding:8px 0;';
+      empty.textContent='No exercises yet. Tap Add Exercise below.'; card.appendChild(empty);
+    }
+    this.builderRoutine.exercises.forEach((ex,i)=>{
+      const item=document.createElement('div'); item.className='ex-item';
+      const hdr=document.createElement('div'); hdr.className='ex-item-header';
+      const nameEl=document.createElement('span'); nameEl.className='ex-item-name'; nameEl.textContent=ex.name;
+      const detail=document.createElement('span'); detail.className='ex-item-detail';
+      detail.textContent=ex.sets+' sets · '+(MEASURE_TYPES.find(t=>t.id===ex.type)?.label||ex.type);
+      hdr.appendChild(nameEl); hdr.appendChild(detail); item.appendChild(hdr);
+      const rowBtns=document.createElement('div'); rowBtns.className='btn-row'; rowBtns.style.marginTop='6px';
+      const editBtn=document.createElement('button'); editBtn.className='btn small'; editBtn.textContent='Edit';
+      editBtn.onclick=()=>{this.builderExEditIdx=i;this.builderExForm={name:ex.name,sets:ex.sets,type:ex.type};this.builderStep='ex_form';this.render();};
+      const delBtn=document.createElement('button'); delBtn.className='btn small red'; delBtn.textContent='Delete';
+      delBtn.onclick=()=>{if(confirm('Delete '+ex.name+'?')){this.builderRoutine.exercises.splice(i,1);this.render();}};
+      rowBtns.appendChild(editBtn); rowBtns.appendChild(delBtn); item.appendChild(rowBtns);
+      card.appendChild(item);
+    });
+    wrap.appendChild(card);
+    const br=document.createElement('div'); br.className='btn-row';
+    const back=document.createElement('button'); back.className='btn'; back.textContent='Back';
+    back.onclick=()=>{this.builderStep='name';this.render();}; br.appendChild(back);
+    if(this.builderRoutine.exercises.length<MAX_EXERCISES){
+      const addBtn=document.createElement('button'); addBtn.className='btn blue'; addBtn.textContent='Add Exercise';
+      addBtn.onclick=()=>{this.builderExEditIdx=null;this.builderExForm={name:'',sets:3,type:'lbs_reps'};this.builderStep='ex_form';this.render();}; br.appendChild(addBtn);
+    }
+    wrap.appendChild(br);
+    if(this.builderRoutine.exercises.length>0){
+      const saveBr=document.createElement('div'); saveBr.className='btn-row';
+      const saveBtn=document.createElement('button'); saveBtn.className='btn primary'; saveBtn.style.width='100%'; saveBtn.textContent='Save Routine';
+      saveBtn.onclick=()=>{this.saveRoutine();}; saveBr.appendChild(saveBtn);
+      wrap.appendChild(saveBr);
+    }
+    return wrap;
+  }
+
+  renderBuilderExForm(){
+    const wrap=document.createElement('div');
+    const isEdit=this.builderExEditIdx!==null;
+    const card=document.createElement('div'); card.className='card';
+    card.innerHTML='<div class="card-title">'+(isEdit?'Edit Exercise':'Add Exercise')+'</div>';
+    const nl=document.createElement('div'); nl.className='field-label'; nl.textContent='Exercise name'; card.appendChild(nl);
+    const ni=document.createElement('input'); ni.type='text'; ni.placeholder='e.g., Chest Press';
+    ni.value=this.builderExForm.name; ni.oninput=e=>this.builderExForm.name=e.target.value; card.appendChild(ni);
+    const sl=document.createElement('div'); sl.className='field-label'; sl.textContent='Number of sets'; card.appendChild(sl);
+    const sel=document.createElement('select');
+    for(let i=1;i<=MAX_SETS;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i+' set'+(i>1?'s':''); if(i===this.builderExForm.sets)o.selected=true; sel.appendChild(o); }
+    sel.onchange=e=>this.builderExForm.sets=parseInt(e.target.value); card.appendChild(sel);
+    const tl=document.createElement('div'); tl.className='field-label'; tl.textContent='What do you measure?'; card.appendChild(tl);
+    const typeBtns=document.createElement('div'); typeBtns.className='type-btns';
+    MEASURE_TYPES.forEach(t=>{ const b=document.createElement('button'); b.className='type-btn'+(this.builderExForm.type===t.id?' selected':''); b.textContent=t.label; b.onclick=()=>{this.builderExForm.type=t.id;this.render();}; typeBtns.appendChild(b); });
+    card.appendChild(typeBtns); wrap.appendChild(card);
+    const br=document.createElement('div'); br.className='btn-row';
+    const back=document.createElement('button'); back.className='btn'; back.textContent='Cancel';
+    back.onclick=()=>{this.builderStep='exercises';this.render();}; br.appendChild(back);
+    const sv=document.createElement('button'); sv.className='btn primary'; sv.textContent=isEdit?'Save Changes':'Add Exercise';
+    sv.onclick=()=>{
+      const name=this.builderExForm.name.trim();
+      if(!name){alert('Please enter an exercise name.');return;}
+      const ex={name,sets:this.builderExForm.sets,type:this.builderExForm.type};
+      if(isEdit){this.builderRoutine.exercises[this.builderExEditIdx]=ex;}
+      else{this.builderRoutine.exercises.push(ex);}
+      this.builderStep='exercises';this.render();
+    }; br.appendChild(sv);
+    wrap.appendChild(br);
+    return wrap;
+  }
+
+  saveRoutine(){
+    const idx=this.routines.findIndex(r=>r.name===this.builderRoutine.name);
+    if(idx>=0){this.routines[idx]=this.builderRoutine;}
+    else{this.routines.push(this.builderRoutine);}
+    saveRoutines(this.routines);
+    this.activeRoutineName=this.builderRoutine.name;
+    saveActiveRoutine(this.activeRoutineName);
+    if(this.firstUse){saveFirstUse();this.firstUse=false;}
+    this.currentExIdx=0;
+    this.initEntryData();
+    this.view='entry';
+    showToast('Routine saved!');
+    this.render();
+  }
+}
+
+new App();
+</script>
+</body>
+</html>
