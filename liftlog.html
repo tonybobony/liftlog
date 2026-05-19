@@ -297,7 +297,7 @@ class App {
     const exData=this.currentData[ex.name];
     if(ex.type==='reps'){
       const row=document.createElement('div'); row.style.cssText='display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;margin-bottom:6px;';
-      row.innerHTML='<span style="font-size:15px;color:#666;">Count (reps)</span>';
+      row.innerHTML='<span style="font-size:15px;color:#666;">Reps</span>';
       const inp=document.createElement('input'); inp.type='number'; inp.min='0'; inp.inputMode='numeric'; inp.value=exData.count;
       inp.oninput=e=>this.currentData[ex.name].count=e.target.value;
       row.appendChild(inp); card.appendChild(row);
