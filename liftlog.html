@@ -15,8 +15,8 @@
 
   /* HEADER */
   .header { background: #185FA5; border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
-  .header-top { padding: 10px 14px 8px; }
-  .header-title { font-size: 13px; font-weight: 600; color: #E6F1FB; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+  .header-top { padding: 10px 14px 8px; display: flex; justify-content: space-between; align-items: center; }
+  .header-title { font-size: 13px; font-weight: 600; color: #E6F1FB; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .header-date { font-size: 13px; font-weight: 600; color: #E6F1FB; white-space: nowrap; margin-left: 8px; padding-right: 8px; }
   .header-routine { font-size: 11px; color: #B5D4F4; padding: 0 14px 6px; }
   .header-btns { display: flex; gap: 5px; flex-wrap: nowrap; padding: 0 10px 10px; justify-content: flex-end; }
   .hbtn { background: transparent; border: 0.5px solid #378ADD; border-radius: 7px; padding: 5px 0; font-size: 11px; cursor: pointer; color: #B5D4F4; white-space: nowrap; flex: 1; text-align: center; }
@@ -219,7 +219,7 @@ class App {
     const hdr=document.createElement('div'); hdr.className='header';
     const top=document.createElement('div'); top.className='header-top';
     const routineLabel=this.activeRoutineName?': '+this.activeRoutineName:'';
-    top.innerHTML='<span class="header-title">LIFT LOG'+routineLabel+'</span>';
+    const todayStr=new Date().toLocaleDateString('en-US',{month:'numeric',day:'numeric',year:'2-digit'}); top.innerHTML='<span class="header-title">LIFT LOG'+routineLabel+'</span><span class="header-date">'+todayStr+'</span>';
     hdr.appendChild(top);
     const btns=document.createElement('div'); btns.className='header-btns';
 
@@ -273,9 +273,9 @@ class App {
     if(!routine){ const empty=document.createElement('div'); empty.className='empty-state'; empty.innerHTML='<p style="font-size:15px;margin-bottom:12px;">No routine selected.</p><p style="font-size:13px;color:#aaa;">Tap <strong>Create/Edit Routine</strong> above to get started.</p>'; wrap.appendChild(empty); return wrap; }
     if(!routine.exercises.length){ const empty=document.createElement('div'); empty.className='empty-state'; empty.textContent='This routine has no exercises. Tap Create/Edit Routine to add some.'; wrap.appendChild(empty); return wrap; }
 
-    const dr=document.createElement('div'); dr.className='date-row'; dr.innerHTML='<label>Date</label>';
-    const di=document.createElement('input'); di.type='date'; di.value=this.date; di.onchange=e=>this.date=e.target.value;
-    dr.appendChild(di); wrap.appendChild(dr);
+    
+    
+    
 
     const ex=routine.exercises[this.currentExIdx];
     const prevData=getDefaultsForExercise(this.activeRoutineName,ex.name);
