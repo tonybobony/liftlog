@@ -38,6 +38,9 @@
   .prev-set { font-size: 14px; color: #0C447C; }
   .prev-set span { color: #042C53; font-weight: 600; }
   .prev-note { font-size: 12px; color: #185FA5; margin-top: 5px; font-style: italic; }
+  .prior-btn { background: transparent; border: 0.5px solid #185FA5; border-radius: 6px; padding: 3px 8px; font-size: 11px; cursor: pointer; color: #185FA5; white-space: nowrap; }
+  .prior-btn:active { background: #E6F1FB; }
+  .prior-session-box { margin-top: 8px; padding-top: 8px; border-top: 0.5px solid #C5D9EF; }
   .col-headers { display: grid; gap: 6px; margin-bottom: 3px; }
   .col-header { font-size: 10px; color: #888; text-align: center; }
   .set-row { display: grid; gap: 6px; align-items: center; margin-bottom: 6px; }
@@ -284,14 +287,64 @@ class App {
     exh.innerHTML='<span class="ex-name">'+ex.name+'</span><span class="ex-progress">'+(this.currentExIdx+1)+' of '+routine.exercises.length+'</span>';
     card.appendChild(exh);
 
+    // Get all sessions for this exercise, newest to oldest
+    const allSessions = getSessionsForRoutine(this.activeRoutineName);
+    const exSessions = [...allSessions].reverse().filter(s => s.exercises && s.exercises[ex.name]);
+
     const pb=document.createElement('div'); pb.className='prev-box';
-    pb.innerHTML='<div class="prev-label">Last session</div>';
+
+    // Header row: LAST SESSION label + PRIOR SESSIONS button
+    const pbHeader=document.createElement('div'); pbHeader.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;';
+    const pbLabel=document.createElement('div'); pbLabel.className='prev-label'; pbLabel.style.marginBottom='0'; pbLabel.textContent='Last session';
+    pbHeader.appendChild(pbLabel);
+
+    // Only show button if there are 2+ sessions
+    if(exSessions.length>1){
+      const priorBtn=document.createElement('button'); priorBtn.className='prior-btn';
+      priorBtn.textContent='Prior Sessions';
+      priorBtn.onclick=()=>{
+        const priorDiv=document.getElementById('prior-sessions-'+ex.name);
+        const isOpen=priorDiv.style.maxHeight&&priorDiv.style.maxHeight!=='0px';
+        if(isOpen){
+          priorDiv.style.maxHeight='0px';
+          priorDiv.style.opacity='0';
+          priorBtn.textContent='Prior Sessions';
+        } else {
+          priorDiv.style.maxHeight='1000px';
+          priorDiv.style.opacity='1';
+          priorBtn.textContent='Return';
+        }
+      };
+      pbHeader.appendChild(priorBtn);
+    }
+    pb.appendChild(pbHeader);
+
+    // Last session data
     const ps=document.createElement('div'); ps.className='prev-sets';
     if(!prevData){ ps.innerHTML='<span class="prev-set" style="color:#888;font-size:13px;">No previous data</span>'; }
     else if(ex.type==='reps'){ ps.innerHTML='<span class="prev-set">Count: <span>'+prevData.count+'</span></span>'; }
     else { (prevData.sets||[]).forEach((s,i)=>{ const sp=document.createElement('span'); sp.className='prev-set'; sp.innerHTML='S'+(i+1)+': <span>'+s.lbs+' x '+s.reps+'</span>'; ps.appendChild(sp); }); }
     pb.appendChild(ps);
     if(prevData&&prevData.note){ const pn=document.createElement('div'); pn.className='prev-note'; pn.textContent='Note: '+prevData.note; pb.appendChild(pn); }
+
+    // Prior sessions collapsible, skip first (most recent) shown above
+    const priorDiv=document.createElement('div');
+    priorDiv.id='prior-sessions-'+ex.name;
+    priorDiv.style.cssText='max-height:0px;opacity:0;overflow:hidden;transition:max-height 0.4s ease,opacity 0.3s ease;';
+    exSessions.slice(1).forEach(session=>{
+      const sbox=document.createElement('div'); sbox.className='prior-session-box';
+      const dateLabel=document.createElement('div'); dateLabel.className='prev-label'; dateLabel.style.marginBottom='4px';
+      dateLabel.textContent=formatDate(session.date);
+      sbox.appendChild(dateLabel);
+      const data=session.exercises[ex.name];
+      const ssets=document.createElement('div'); ssets.className='prev-sets';
+      if(ex.type==='reps'){ ssets.innerHTML='<span class="prev-set">Count: <span>'+data.count+'</span></span>'; }
+      else { (data.sets||[]).forEach((s,i)=>{ const sp=document.createElement('span'); sp.className='prev-set'; sp.innerHTML='S'+(i+1)+': <span>'+s.lbs+' x '+s.reps+'</span>'; ssets.appendChild(sp); }); }
+      sbox.appendChild(ssets);
+      if(data.note){ const pn=document.createElement('div'); pn.className='prev-note'; pn.textContent='Note: '+data.note; sbox.appendChild(pn); }
+      priorDiv.appendChild(sbox);
+    });
+    pb.appendChild(priorDiv);
     card.appendChild(pb);
 
     const exData=this.currentData[ex.name];
