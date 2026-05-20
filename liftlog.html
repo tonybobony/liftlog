@@ -32,15 +32,15 @@
   .ex-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; }
   .ex-name { font-size: 20px; font-weight: 500; text-transform: capitalize; color: #111; }
   .ex-progress { font-size: 12px; color: #185FA5; font-weight: 500; }
-  .prev-box { background: #E6F1FB; border-radius: 7px; padding: 8px 11px; margin-bottom: 10px; }
+  .prev-box { background: #E6F1FB; border-radius: 7px; padding: 8px 11px; margin-bottom: 3px; }
   .prev-label { font-size: 10px; color: #185FA5; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
   .prev-sets { display: flex; gap: 12px; flex-wrap: wrap; }
   .prev-set { font-size: 14px; color: #0C447C; }
   .prev-set span { color: #042C53; font-weight: 600; }
   .prev-note { font-size: 12px; color: #185FA5; margin-top: 5px; font-style: italic; }
-  .prior-btn { background: transparent; border: 0.5px solid #185FA5; border-radius: 6px; padding: 3px 8px; font-size: 11px; cursor: pointer; color: #185FA5; white-space: nowrap; }
+  .prior-btn { background: transparent; border: 0.5px solid #7BAFD4; border-radius: 6px; padding: 3px 8px; font-size: 11px; cursor: pointer; color: #7BAFD4; white-space: nowrap; font-weight: 400; }
   .prior-btn:active { background: #E6F1FB; }
-  .prior-session-box { margin-top: 8px; padding: 8px 10px; border-radius: 6px; background: #D6E8F7; }
+  .prior-session-box { margin-top: 3px; padding: 8px 11px; border-radius: 7px; background: #E6F1FB; border: 0.5px solid #C5D9EF; }
   .col-headers { display: grid; gap: 6px; margin-bottom: 3px; }
   .col-header { font-size: 10px; color: #888; text-align: center; }
   .set-row { display: grid; gap: 6px; align-items: center; margin-bottom: 6px; }
@@ -344,8 +344,8 @@ class App {
       if(data.note){ const pn=document.createElement('div'); pn.className='prev-note'; pn.textContent='Note: '+data.note; sbox.appendChild(pn); }
       priorDiv.appendChild(sbox);
     });
-    pb.appendChild(priorDiv);
     card.appendChild(pb);
+    card.appendChild(priorDiv);
 
     const exData=this.currentData[ex.name];
     if(ex.type==='reps'){
