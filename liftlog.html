@@ -94,8 +94,8 @@
   .ex-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
   .ex-item-name { font-size: 14px; font-weight: 500; color: #111; }
   .ex-item-detail { font-size: 12px; color: #666; }
-  .type-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
-  .type-btn { padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 0.5px solid #ccc; background: #fff; color: #555; }
+  .type-btns { display: flex; gap: 3px; flex-wrap: nowrap; margin-top: 6px; overflow-x: auto; }
+  .type-btn { padding: 5px 6px; border-radius: 6px; font-size: 11px; cursor: pointer; border: 0.5px solid #ccc; background: #fff; color: #555; white-space: nowrap; flex-shrink: 0; }
   .type-btn.selected { background: #185FA5; color: #fff; border-color: #185FA5; }
   .field-label { font-size: 11px; color: #888; margin-bottom: 3px; margin-top: 8px; }
   select { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 7px; background: #fff; color: #111; font-size: 14px; }
@@ -116,6 +116,15 @@
   .section-note { font-size: 11px; color: #999; margin-top: 8px; line-height: 1.5; }
   .trial-banner { background: #FFF8E1; border: 0.5px solid #FFD54F; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; font-size: 12px; color: #795548; text-align: center; }
   .locked-banner { background: #FFEBEE; border: 0.5px solid #EF9A9A; border-radius: 8px; padding: 12px; margin-bottom: 10px; font-size: 13px; color: #c62828; text-align: center; line-height: 1.6; }
+
+  .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.4); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+  .modal-box { background: #fff; border-radius: 12px; padding: 20px 20px 16px; max-width: 320px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+  .modal-title { font-size: 13px; font-weight: 600; color: #185FA5; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px; }
+  .modal-msg { font-size: 14px; color: #333; line-height: 1.6; margin-bottom: 16px; }
+  .modal-btns { display: flex; gap: 8px; }
+  .modal-btn { flex: 1; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid #ccc; background: #fff; color: #111; text-align: center; }
+  .modal-btn.confirm { background: #639922; color: #fff; border-color: #639922; }
+  .modal-btn.cancel { background: #fff; color: #185FA5; border-color: #185FA5; }
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #185FA5; color: #fff; padding: 9px 20px; border-radius: 18px; font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; white-space: nowrap; }
   .toast.show { opacity: 1; }
   .spacer { height: 44px; } /* space of one button height */
@@ -132,9 +141,11 @@ const MAX_EXERCISES = 20;
 const MAX_SETS = 6;
 const TRIAL_DAYS = 30;
 const MEASURE_TYPES = [
-  { id:'lbs_reps', label:'Lbs + Reps' },
-  { id:'kg_reps',  label:'Kg + Reps' },
-  { id:'reps',     label:'Reps only' }
+  { id:'lbs_reps',    label:'Reps x Lbs' },
+  { id:'kg_reps',     label:'Reps x Kg' },
+  { id:'left_right',  label:'Left / Right' },
+  { id:'reps',        label:'Reps only' },
+  { id:'minutes',     label:'Minutes' }
 ];
 
 function load(key,def){ try{ const v=localStorage.getItem(key); return v!==null?JSON.parse(v):def; }catch(e){ return def; } }
@@ -167,6 +178,20 @@ function importData(file,onDone){ const reader=new FileReader(); reader.onload=e
 
 document.addEventListener('focusin',function(e){ if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT'){ setTimeout(()=>e.target.scrollIntoView({behavior:'smooth',block:'center'}),300); } });
 
+function showModal(message, onConfirm) {
+  const overlay=document.createElement('div'); overlay.className='modal-overlay';
+  const box=document.createElement('div'); box.className='modal-box';
+  const title=document.createElement('div'); title.className='modal-title'; title.textContent='Just a moment';
+  const msg=document.createElement('div'); msg.className='modal-msg'; msg.textContent=message;
+  const btns=document.createElement('div'); btns.className='modal-btns';
+  const cancelBtn=document.createElement('button'); cancelBtn.className='modal-btn cancel'; cancelBtn.textContent='Cancel';
+  cancelBtn.onclick=()=>document.body.removeChild(overlay);
+  const confirmBtn=document.createElement('button'); confirmBtn.className='modal-btn confirm'; confirmBtn.textContent='Continue';
+  confirmBtn.onclick=()=>{ document.body.removeChild(overlay); onConfirm(); };
+  btns.appendChild(cancelBtn); btns.appendChild(confirmBtn);
+  box.appendChild(title); box.appendChild(msg); box.appendChild(btns);
+  overlay.appendChild(box); document.body.appendChild(overlay);
+}
 class App {
   constructor(){
     loadInstallDate();
@@ -193,7 +218,9 @@ class App {
     this.currentData={};
     routine.exercises.forEach(ex=>{
       const prev=getDefaultsForExercise(this.activeRoutineName,ex.name);
-      if(ex.type==='reps'){ this.currentData[ex.name]={count:'',note:''}; }
+      if(ex.type==='reps'){ this.currentData[ex.name]={sets:Array.from({length:ex.sets},()=>({reps:''})),note:''}; }
+      else if(ex.type==='left_right'){ this.currentData[ex.name]={sets:Array.from({length:ex.sets},()=>({left:'',right:''})),note:''}; }
+      else if(ex.type==='minutes'){ this.currentData[ex.name]={count:prev?prev.count:'',note:''}; }
       else { this.currentData[ex.name]={sets:Array.from({length:ex.sets},(_,i)=>({lbs:prev&&prev.sets&&prev.sets[i]?prev.sets[i].lbs:'',reps:''})),note:''}; }
     });
   }
@@ -230,7 +257,7 @@ class App {
     const ceBtn=document.createElement('button');
     ceBtn.className='hbtn'+(this.firstUse?' pulse':'');
     ceBtn.textContent='Create/Edit Routine';
-    ceBtn.onclick=()=>{this.view='builder';this.builderStep='menu';this.render();};
+    ceBtn.onclick=()=>{ this._cameFromEntry=(this.view==='entry'); this.view='builder'; this.builderStep='menu'; this.render(); };
     btns.appendChild(ceBtn);
 
     // Select Routine
@@ -243,7 +270,7 @@ class App {
     const todayBtn=document.createElement('button');
     todayBtn.className='hbtn'+(this.view==='entry'?' active':'');
     todayBtn.textContent='Today';
-    todayBtn.onclick=()=>{this.view='entry';this.currentExIdx=0;this.initEntryData();this.render();};
+    todayBtn.onclick=()=>{ if(this.view!=='entry'){this.currentExIdx=0;this.initEntryData();} this.view='entry';this.render(); };
     btns.appendChild(todayBtn);
 
     // History
@@ -298,10 +325,14 @@ class App {
     const pbLabel=document.createElement('div'); pbLabel.className='prev-label'; pbLabel.style.marginBottom='0'; pbLabel.textContent='Last session';
     pbHeader.appendChild(pbLabel);
 
-    // Only show button if there are 2+ sessions
-    if(exSessions.length>1){
-      const priorBtn=document.createElement('button'); priorBtn.className='prior-btn';
-      priorBtn.textContent='Prior Sessions';
+    // Always show button, but disable if fewer than 2 sessions
+    const priorBtn=document.createElement('button'); priorBtn.className='prior-btn';
+    priorBtn.textContent='Prior Sessions';
+    if(exSessions.length<=2){
+      priorBtn.disabled=true;
+      priorBtn.style.opacity='0.35';
+      priorBtn.style.cursor='default';
+    } else {
       priorBtn.onclick=()=>{
         const priorDiv=document.getElementById('prior-sessions-'+ex.name);
         const isOpen=priorDiv.style.maxHeight&&priorDiv.style.maxHeight!=='0px';
@@ -315,14 +346,16 @@ class App {
           priorBtn.textContent='Return';
         }
       };
-      pbHeader.appendChild(priorBtn);
     }
+    pbHeader.appendChild(priorBtn);
     pb.appendChild(pbHeader);
 
     // Last session data
     const ps=document.createElement('div'); ps.className='prev-sets';
     if(!prevData){ ps.innerHTML='<span class="prev-set" style="color:#888;font-size:13px;">No previous data</span>'; }
-    else if(ex.type==='reps'){ ps.innerHTML='<span class="prev-set">Count: <span>'+prevData.count+'</span></span>'; }
+    else if(ex.type==='minutes'){ ps.innerHTML='<span class="prev-set">'+prevData.count+' min</span>'; }
+    else if(ex.type==='left_right'){ (prevData.sets||[]).forEach((s,i)=>{ const sp=document.createElement('span'); sp.className='prev-set'; sp.innerHTML='S'+(i+1)+': <span>'+s.left+' / '+s.right+'</span>'; ps.appendChild(sp); }); }
+    else if(ex.type==='reps'){ (prevData.sets||[]).forEach((s,i)=>{ const sp=document.createElement('span'); sp.className='prev-set'; sp.innerHTML='S'+(i+1)+': <span>'+s.reps+'</span>'; ps.appendChild(sp); }); }
     else { (prevData.sets||[]).forEach((s,i)=>{ const sp=document.createElement('span'); sp.className='prev-set'; sp.innerHTML='S'+(i+1)+': <span>'+s.lbs+' x '+s.reps+'</span>'; ps.appendChild(sp); }); }
     pb.appendChild(ps);
     if(prevData&&prevData.note){ const pn=document.createElement('div'); pn.className='prev-note'; pn.textContent='Note: '+prevData.note; pb.appendChild(pn); }
@@ -338,7 +371,9 @@ class App {
       sbox.appendChild(dateLabel);
       const data=session.exercises[ex.name];
       const ssets=document.createElement('div'); ssets.className='prev-sets';
-      if(ex.type==='reps'){ ssets.innerHTML='<span class="prev-set">Count: <span>'+data.count+'</span></span>'; }
+      if(ex.type==='minutes'){ ssets.innerHTML='<span class="prev-set">'+data.count+' min</span>'; }
+      else if(ex.type==='left_right'){ (data.sets||[]).forEach((s,i)=>{ const sp=document.createElement('span'); sp.className='prev-set'; sp.innerHTML='S'+(i+1)+': <span>'+s.left+' / '+s.right+'</span>'; ssets.appendChild(sp); }); }
+      else if(ex.type==='reps'){ (data.sets||[]).forEach((s,i)=>{ const sp=document.createElement('span'); sp.className='prev-set'; sp.innerHTML='S'+(i+1)+': <span>'+s.reps+'</span>'; ssets.appendChild(sp); }); }
       else { (data.sets||[]).forEach((s,i)=>{ const sp=document.createElement('span'); sp.className='prev-set'; sp.innerHTML='S'+(i+1)+': <span>'+s.lbs+' x '+s.reps+'</span>'; ssets.appendChild(sp); }); }
       sbox.appendChild(ssets);
       if(data.note){ const pn=document.createElement('div'); pn.className='prev-note'; pn.textContent='Note: '+data.note; sbox.appendChild(pn); }
@@ -348,12 +383,36 @@ class App {
     card.appendChild(priorDiv);
 
     const exData=this.currentData[ex.name];
-    if(ex.type==='reps'){
+    if(ex.type==='minutes'){
       const row=document.createElement('div'); row.style.cssText='display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;margin-bottom:6px;';
-      row.innerHTML='<span style="font-size:15px;color:#666;">Reps</span>';
+      row.innerHTML='<span style="font-size:15px;color:#666;">Minutes</span>';
       const inp=document.createElement('input'); inp.type='number'; inp.min='0'; inp.inputMode='numeric'; inp.value=exData.count;
       inp.oninput=e=>this.currentData[ex.name].count=e.target.value;
       row.appendChild(inp); card.appendChild(row);
+    } else if(ex.type==='left_right'){
+      const ch=document.createElement('div'); ch.className='col-headers'; ch.style.gridTemplateColumns='36px 1fr 1fr';
+      ch.innerHTML='<div></div><div class="col-header">Left</div><div class="col-header">Right</div>';
+      card.appendChild(ch);
+      exData.sets.forEach((set,i)=>{
+        const row=document.createElement('div'); row.className='set-row'; row.style.gridTemplateColumns='36px 1fr 1fr';
+        row.innerHTML='<div class="set-label">S'+(i+1)+'</div>';
+        const li=document.createElement('input'); li.type='number'; li.min='0'; li.inputMode='numeric'; li.value=set.left;
+        li.oninput=e=>this.currentData[ex.name].sets[i].left=e.target.value;
+        const ri=document.createElement('input'); ri.type='number'; ri.min='0'; ri.inputMode='numeric'; ri.value=set.right;
+        ri.oninput=e=>this.currentData[ex.name].sets[i].right=e.target.value;
+        row.appendChild(li); row.appendChild(ri); card.appendChild(row);
+      });
+    } else if(ex.type==='reps'){
+      const ch=document.createElement('div'); ch.className='col-headers'; ch.style.gridTemplateColumns='36px 1fr';
+      ch.innerHTML='<div></div><div class="col-header">Reps</div>';
+      card.appendChild(ch);
+      exData.sets.forEach((set,i)=>{
+        const row=document.createElement('div'); row.className='set-row'; row.style.gridTemplateColumns='36px 1fr';
+        row.innerHTML='<div class="set-label">S'+(i+1)+'</div>';
+        const ri=document.createElement('input'); ri.type='number'; ri.min='0'; ri.inputMode='numeric'; ri.value=set.reps;
+        ri.oninput=e=>this.currentData[ex.name].sets[i].reps=e.target.value;
+        row.appendChild(ri); card.appendChild(row);
+      });
     } else {
       const unit=ex.type==='kg_reps'?'Kg':'Lbs';
       const ch=document.createElement('div'); ch.className='col-headers'; ch.style.gridTemplateColumns='36px 1fr 1fr';
@@ -457,7 +516,9 @@ class App {
         const tr=document.createElement('tr');
         const nt=document.createElement('td'); nt.textContent=ex.name; tr.appendChild(nt);
         const vt=document.createElement('td');
-        if(ex.type==='reps'){ vt.innerHTML='<span class="chip">'+data.count+' reps</span>'; }
+        if(ex.type==='minutes'){ vt.innerHTML='<span class="chip">'+data.count+' min</span>'; }
+        else if(ex.type==='left_right'){ const sc=document.createElement('div'); sc.className='set-chips'; (data.sets||[]).forEach(s=>{ const c=document.createElement('span'); c.className='chip'; c.textContent=s.left+' / '+s.right; sc.appendChild(c); }); vt.appendChild(sc); }
+        else if(ex.type==='reps'){ const sc=document.createElement('div'); sc.className='set-chips'; (data.sets||[]).forEach(s=>{ const c=document.createElement('span'); c.className='chip'; c.textContent=s.reps+' reps'; sc.appendChild(c); }); vt.appendChild(sc); }
         else { const sc=document.createElement('div'); sc.className='set-chips'; (data.sets||[]).forEach(s=>{ const c=document.createElement('span'); c.className='chip'; c.textContent=s.lbs+' x '+s.reps; sc.appendChild(c); }); vt.appendChild(sc); }
         if(data.note){ const hn=document.createElement('div'); hn.className='hist-note'; hn.textContent='Note: '+data.note; vt.appendChild(hn); }
         tr.appendChild(vt); tbl.appendChild(tr);
@@ -525,7 +586,19 @@ class App {
     this.routines.forEach(r=>{
       const item=document.createElement('div'); item.className='menu-item';
       item.innerHTML='<span>Edit <strong>'+r.name+'</strong></span><span class="arrow">›</span>';
-      item.onclick=()=>{this.builderMode='edit';this.builderRoutine=JSON.parse(JSON.stringify(r));this.builderStep='name';this.render();};
+      item.onclick=(()=>{ const routine=r; return ()=>{
+        // Only check reps — lbs and minutes are pre-filled defaults, not user-entered
+        const hasData = this._cameFromEntry && this.currentData &&
+          Object.values(this.currentData).some(d=>
+            (d.sets && d.sets.some(s=>(s.reps&&s.reps!=='')))
+          );
+        if(hasData){
+          showModal('Editing your routine mid-session will erase any data you have already entered. Continue?',
+            ()=>{ this.builderMode='edit'; this.builderRoutine=JSON.parse(JSON.stringify(routine)); this.builderStep='name'; this.render(); });
+        } else {
+          this.builderMode='edit'; this.builderRoutine=JSON.parse(JSON.stringify(routine)); this.builderStep='name'; this.render();
+        }
+      };})();
       card.appendChild(item);
     });
     const br=document.createElement('div'); br.className='btn-row';
@@ -581,7 +654,17 @@ class App {
       editBtn.onclick=()=>{this.builderExEditIdx=i;this.builderExForm={name:ex.name,sets:ex.sets,type:ex.type};this.builderStep='ex_form';this.render();};
       const delBtn=document.createElement('button'); delBtn.className='btn small red'; delBtn.textContent='Delete';
       delBtn.onclick=()=>{if(confirm('Delete '+ex.name+'?')){this.builderRoutine.exercises.splice(i,1);this.render();}};
-      rowBtns.appendChild(editBtn); rowBtns.appendChild(delBtn); item.appendChild(rowBtns);
+      // Up/Down buttons
+      const upBtn=document.createElement('button'); upBtn.className='btn small'; upBtn.textContent='↑';
+      upBtn.style.cssText='flex:0;padding:8px 10px;';
+      upBtn.disabled=(i===0); upBtn.style.opacity=(i===0)?'0.3':'1';
+      upBtn.onclick=()=>{ const arr=this.builderRoutine.exercises; [arr[i-1],arr[i]]=[arr[i],arr[i-1]]; this.render(); };
+      const dnBtn=document.createElement('button'); dnBtn.className='btn small'; dnBtn.textContent='↓';
+      dnBtn.style.cssText='flex:0;padding:8px 10px;';
+      const lastIdx=this.builderRoutine.exercises.length-1;
+      dnBtn.disabled=(i===lastIdx); dnBtn.style.opacity=(i===lastIdx)?'0.3':'1';
+      dnBtn.onclick=()=>{ const arr=this.builderRoutine.exercises; [arr[i],arr[i+1]]=[arr[i+1],arr[i]]; this.render(); };
+      rowBtns.appendChild(upBtn); rowBtns.appendChild(dnBtn); rowBtns.appendChild(editBtn); rowBtns.appendChild(delBtn); item.appendChild(rowBtns);
       card.appendChild(item);
     });
     wrap.appendChild(card);
