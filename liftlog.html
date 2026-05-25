@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
 <meta charset="UTF-8">
-<title>LIFT LOG</title>
+<title>LIFT & LOG</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   input[type=number]::-webkit-inner-spin-button,
@@ -174,7 +174,7 @@ function deleteSessionForRoutine(name,idx){ const a=loadSessions(); if(!a[name])
 function getLastSessionForRoutine(name){ const s=getSessionsForRoutine(name); return s.length?s[s.length-1]:null; }
 function getDefaultsForExercise(routineName,exName){ const last=getLastSessionForRoutine(routineName); if(!last||!last.exercises)return null; return last.exercises[exName]||null; }
 
-function exportData(){ const data={routines:loadRoutines(),sessions:loadSessions(),activeRoutine:loadActiveRoutine(),installDate:loadInstallDate()}; const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='liftlog-backup-'+getToday()+'.json'; a.click(); URL.revokeObjectURL(url); showToast('Backup saved!'); }
+function exportData(){ const data={routines:loadRoutines(),sessions:loadSessions(),activeRoutine:loadActiveRoutine(),installDate:loadInstallDate()}; const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='lift-and-log-backup-'+getToday()+'.json'; a.click(); URL.revokeObjectURL(url); showToast('Backup saved!'); }
 function importData(file,onDone){ const reader=new FileReader(); reader.onload=e=>{ try{ const d=JSON.parse(e.target.result); if(d.routines)saveRoutines(d.routines); if(d.sessions)saveSessions(d.sessions); if(d.activeRoutine)saveActiveRoutine(d.activeRoutine); showToast('Import successful!'); onDone(); }catch(err){alert('Could not read backup file.');} }; reader.readAsText(file); }
 
 document.addEventListener('focusin',function(e){ if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT'){ setTimeout(()=>e.target.scrollIntoView({behavior:'smooth',block:'center'}),300); } });
@@ -250,7 +250,7 @@ class App {
     const hdr=document.createElement('div'); hdr.className='header';
     const top=document.createElement('div'); top.className='header-top';
     const routineLabel=this.activeRoutineName?': '+this.activeRoutineName:'';
-    const todayStr=new Date().toLocaleDateString('en-US',{month:'numeric',day:'numeric',year:'2-digit'}); top.innerHTML='<span class="header-title">LIFT LOG'+routineLabel+'</span><span class="header-date">'+todayStr+'</span>';
+    const todayStr=new Date().toLocaleDateString('en-US',{month:'numeric',day:'numeric',year:'2-digit'}); top.innerHTML='<span class="header-title">LIFT &amp; LOG'+routineLabel+'</span><span class="header-date">'+todayStr+'</span>';
     hdr.appendChild(top);
     const btns=document.createElement('div'); btns.className='header-btns';
 
@@ -288,7 +288,7 @@ class App {
   renderLocked(){
     const wrap=document.createElement('div');
     const banner=document.createElement('div'); banner.className='locked-banner';
-    banner.innerHTML='🏋️ 💪<br><br>Your 30-day free trial has ended.<br><br>Lift Log is just <strong>'+PAYMENT_AMOUNT+'</strong> — a one-time payment, no subscription, no ads, ever. We hope you\'ll stick around. Thanks in advance.<br><br><em>To continue logging, please purchase Lift Log.</em>';
+    banner.innerHTML='🏋️ 💪<br><br>Your 30-day free trial has ended.<br><br>Lift &amp; Log is just <strong>'+PAYMENT_AMOUNT+'</strong> — a one-time payment, no subscription, no ads, ever. We hope you\'ll stick around. Thanks in advance.<br><br><em>To continue logging, please purchase Lift &amp; Log.</em>';
     wrap.appendChild(banner);
     const note=document.createElement('div'); note.className='card';
     note.innerHTML='<div class="card-title">Your data is safe</div><p style="font-size:13px;color:#555;line-height:1.6;">All your workout history is preserved. Tap History above to view your past sessions anytime.</p>';
@@ -477,8 +477,8 @@ class App {
     fb.style.cssText='display:block;width:100%;padding:11px;font-size:14px;';
     fb.textContent='Send feedback or suggestions';
     fb.onclick=()=>{
-      const subject=encodeURIComponent('Lift Log Feedback');
-      const body=encodeURIComponent('Hi,\n\nHere is my feedback for Lift Log:\n\n');
+      const subject=encodeURIComponent('Lift & Log Feedback');
+      const body=encodeURIComponent('Hi,\n\nHere is my feedback for Lift & Log:\n\n');
       window.open('mailto:'+FEEDBACK_EMAIL+'?subject='+subject+'&body='+body);
     };
     wrap.appendChild(fb);
